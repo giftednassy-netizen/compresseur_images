@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Compresseur d'images en ligne : convertissez vos images en WebP, AVIF, JPEG, PNG ou BMP avec une compression optimisée pour un poids inférieur à 10 Ko tout en préservant la qualité.">
+    <meta name="keywords" content="compresseur d'images, conversion d'images, WebP, AVIF, JPEG, PNG, BMP, compression d'images en ligne, optimisation d'images, réduction de taille d'images">
+    <meta name="author" content="Gifted Nassy">
+    <meta property="og:title" content="Compresseur d'images en ligne - Convertisseur WebP, AVIF, JPEG, PNG, BMP">
+    <meta property="og:description" content="Compresseur d'images en ligne : convertissez vos images en WebP, AVIF, JPEG, PNG ou BMP avec une compression optimisée pour un poids inférieur à 10 Ko tout en préservant la qualité.">
+    <meta property="og:image" content="https://giftednassy-netizen.github.io/compresseur_images/assets/preview.png">
+    <link rel="stylesheet" href="style.css">
+    <title>Compresseur images</title>
+</head>
+<body>
+    <header>
+        <nav>
+            <div class="logo">
+                <h1>Compresseur d'images</h1>
+            </div>
+            <ul>
+                <li><a href="#">Accueil</a></li>
+                <li><a href="#" id="functionalitiesLink">Fonctionnalités</a></li>
+                <li><a href="#" id="contactLink">Contact</a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <p class="lead">Conversion optimisée : netteté maximale, détails propres et poids réduit au minimum possible.</p>
+
+        <div class="controls">
+            <label for="imageInput">Choisir une image :</label>
+            <input type="file" id="imageInput" accept="image/*">
+        </div>
+
+        <div class="controls">
+            <label for="formatSelect">Format de sortie :</label>
+            <select id="formatSelect">
+                <option value="image/webp">WebP</option>
+                <option value="image/avif">AVIF</option>
+                <option value="image/jpeg">JPEG</option>
+                <option value="image/png">PNG</option>
+                <option value="image/bmp">BMP</option>
+            </select>
+            <button id="convertButton">Convertir</button>
+        </div>
+
+        <p id="status">Choisissez une image puis cliquez sur Convertir.</p>
+
+        <div id="progressContainer" class="progress-container" hidden>
+            <div class="progress-bar">
+                <div id="progressFill" class="progress-fill"></div>
+            </div>
+            <div class="progress-text">
+                <span id="progressPercent">0%</span>
+            </div>
+        </div>
+
+        <canvas id="canvas"></canvas>
+    </main>
+
+    <div id="functionalitiesModal" class="modal" hidden>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Fonctionnalités</h2>
+                <button class="modal-close" id="closeFunctionalitiesModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <ul class="features-list">
+                    <li>🚀 Compression ultra-rapide avec algorithme binaire optimisé</li>
+                    <li>📊 Réduction de taille jusqu'à moins de 10 Ko</li>
+                    <li>📸 Netteté maximale : rendu haute qualité</li>
+                    <li>🙋 Support multi-formats : WebP, AVIF, JPEG, PNG, BMP</li>
+                    <li>📄 Barre de progression en temps réel</li>
+                    <li>🗣️ Optimisation automatique qualité vs résolution</li>
+                    <li>💾 Téléchargement instant du fichier compresé</li>
+                    <li>🔍 Pas d'envoi sur serveur : tout se passe dans votre navigateur</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div id="contactModal" class="modal" hidden>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Nous contacter</h2>
+                <button class="modal-close" id="closeModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>Vous pouvez me joindre via :</p>
+                <div class="contact-item">
+                    <span class="contact-label">📧 Email :</span>
+                    <a href="mailto:giftednsg@gmail.com" class="contact-link">giftednsg@gmail.com</a>
+                </div>
+                <div class="contact-item">
+                    <span class="contact-label">💬 WhatsApp :</span>
+                    <a href="https://wa.me/243995658043" target="_blank" class="contact-link">+243 995 658 043</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <footer>
+        <p>&copy; 2026 Compresseur d'images. Tous droits réservés. <br />
+            Auteur : <a href="https://giftednassy-netizen.github.io/portfolio/index.html" target="_blank">Gifted Nassy</a>
+        </p>
+    </footer>
+    <script>
+        const input = document.getElementById("imageInput");
+        const formatSelect = document.getElementById("formatSelect");
+        const convertButton = document.getElementById("convertButton");
+        const status = document.getElementById("status");
+        const progressContainer = document.getElementById("progressContainer");
+        const progressFill = document.getElementById("progressFill");
+        const progressPercent = document.getElementById("progressPercent");
+        const canvas = document.getElementById("canvas");
+        const ctx = canvas.getContext("2d");
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = "high";
+        const MAX_BYTES = 10 * 1024;
+        let currentImage = null;
+        let currentFile = null;
+
+        // Gestion de la modale Contact
+        const contactLink = document.getElementById("contactLink");
+        const contactModal = document.getElementById("contactModal");
+        const closeModal = document.getElementById("closeModal");
+
+        contactLink.addEventListener("click", (e) => {
+            e.preventDefault();
+            contactModal.removeAttribute("hidden");
+        });
+
+        closeModal.addEventListener("click", () => {
+            contactModal.setAttribute("hidden", "");
+        });
+
+        contactModal.addEventListener("click", (e) => {
+            if (e.target === contactModal) {
+                contactModal.setAttribute("hidden", "");
+            }
+        });
+
+        // Gestion de la modale Fonctionnalités
+        const functionalitiesLink = document.getElementById("functionalitiesLink");
+        const functionalitiesModal = document.getElementById("functionalitiesModal");
+        const closeFunctionalitiesModal = document.getElementById("closeFunctionalitiesModal");
+
+        functionalitiesLink.addEventListener("click", (e) => {
+            e.preventDefault();
+            functionalitiesModal.removeAttribute("hidden");
+        });
+
+        closeFunctionalitiesModal.addEventListener("click", () => {
+            functionalitiesModal.setAttribute("hidden", "");
+        });
+
+        functionalitiesModal.addEventListener("click", (e) => {
+            if (e.target === functionalitiesModal) {
+                functionalitiesModal.setAttribute("hidden", "");
+            }
+        });
+
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "Escape") {
+                if (!contactModal.hasAttribute("hidden")) {
+                    contactModal.setAttribute("hidden", "");
+                }
+                if (!functionalitiesModal.hasAttribute("hidden")) {
+                    functionalitiesModal.setAttribute("hidden", "");
+                }
+            }
+        });
+
+        function formatBytes(bytes) {
+            return `${(bytes / 1024).toFixed(2)} Ko`;
+        }
+
+        function showProgress(percent, text) {
+            progressContainer.style.display = "block";
+            progressFill.style.width = `${percent}%`;
+            progressPercent.textContent = `${percent}%`;
+            status.textContent = text;
+        }
+
+        function hideProgress() {
+            progressContainer.style.display = "none";
+            progressFill.style.width = "0%";
+            progressPercent.textContent = "0%";
+        }
+
+        function getExtension(type) {
+            if (type === "image/jpeg") return "jpg";
+            if (type === "image/png") return "png";
+            if (type === "image/webp") return "webp";
+            if (type === "image/avif") return "avif";
+            if (type === "image/bmp") return "bmp";
+            return "img";
+        }
+
+        function createCanvas(width, height) {
+            const offscreen = document.createElement("canvas");
+            offscreen.width = width;
+            offscreen.height = height;
+            const offscreenCtx = offscreen.getContext("2d");
+            offscreenCtx.imageSmoothingEnabled = true;
+            offscreenCtx.imageSmoothingQuality = "high";
+            return offscreen;
+        }
+
+        function drawHighQuality(canvas, image, width, height) {
+            const ctx = canvas.getContext("2d");
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(image, 0, 0, width, height);
+        }
+
+        function toBlob(canvas, type, quality) {
+            return new Promise((resolve) => {
+                canvas.toBlob((blob) => resolve(blob), type, quality);
+            });
+        }
+
+        async function findBestQuality(image, type, width, height, targetBytes) {
+            const minQuality = 0.40;
+            const maxQuality = 1.0;
+            const maxIterations = 7;
+            let best = null;
+            let low = minQuality;
+            let high = maxQuality;
+            let lastBlob = null;
+
+            for (let i = 0; i < maxIterations; i += 1) {
+                const quality = parseFloat(((low + high) / 2).toFixed(3));
+                const currentCanvas = createCanvas(width, height);
+                drawHighQuality(currentCanvas, image, width, height);
+                const blob = await toBlob(currentCanvas, type, quality);
+                if (!blob) break;
+
+                lastBlob = blob;
+                const percent = Math.round(((i + 1) / maxIterations) * 45);
+                showProgress(percent, `Recherche qualité ${Math.round(quality * 100)}%...`);
+
+                if (blob.size <= targetBytes) {
+                    best = { blob, quality };
+                    low = Math.min(high, quality + 0.01);
+                } else {
+                    high = Math.max(minQuality, quality - 0.01);
+                }
+
+                if (high - low < 0.02) break;
+            }
+
+            return best || (lastBlob ? { blob: lastBlob, quality: minQuality } : null);
+        }
+
+        async function findBestScale(image, type, width, height, quality, targetBytes) {
+            const minScale = 0.25;
+            const maxIterations = 8;
+            let low = minScale;
+            let high = 1.0;
+            let best = null;
+            let lastBlob = null;
+
+            for (let i = 0; i < maxIterations; i += 1) {
+                const scale = parseFloat(((low + high) / 2).toFixed(3));
+                const scaledWidth = Math.max(1, Math.round(width * scale));
+                const scaledHeight = Math.max(1, Math.round(height * scale));
+                const currentCanvas = createCanvas(scaledWidth, scaledHeight);
+                drawHighQuality(currentCanvas, image, scaledWidth, scaledHeight);
+                const blob = await toBlob(currentCanvas, type, quality);
+                if (!blob) break;
+
+                lastBlob = blob;
+                const percent = 50 + Math.round(((i + 1) / maxIterations) * 45);
+                showProgress(Math.min(percent, 99), `Recherche résolution ${scaledWidth}x${scaledHeight}...`);
+
+                if (blob.size <= targetBytes) {
+                    best = { blob, width: scaledWidth, height: scaledHeight };
+                    low = Math.min(high, scale + 0.01);
+                } else {
+                    high = Math.max(minScale, scale - 0.01);
+                }
+
+                if (high - low < 0.02) break;
+            }
+
+            return best || (lastBlob ? { blob: lastBlob, width: Math.round(width * low), height: Math.round(height * low) } : null);
+        }
+
+        async function compressCanvas(image, type) {
+            const canUseQuality = ["image/webp", "image/avif", "image/jpeg"].includes(type);
+            const width = canvas.width;
+            const height = canvas.height;
+            let result = null;
+
+            if (canUseQuality) {
+                const qualityResult = await findBestQuality(image, type, width, height, MAX_BYTES);
+                if (qualityResult && qualityResult.blob && qualityResult.blob.size <= MAX_BYTES) {
+                    showProgress(100, `Compression réussie : ${formatBytes(qualityResult.blob.size)}.`);
+                    return { ...qualityResult, width, height };
+                }
+
+                const quality = qualityResult ? qualityResult.quality : 0.40;
+                result = await findBestScale(image, type, width, height, quality, MAX_BYTES);
+            } else {
+                result = await findBestScale(image, type, width, height, undefined, MAX_BYTES);
+            }
+
+            if (result && result.blob && result.blob.size <= MAX_BYTES) {
+                showProgress(100, `Compression optimisée : ${formatBytes(result.blob.size)}.`);
+            } else if (result && result.blob) {
+                showProgress(100, `Taille minimale atteinte : ${formatBytes(result.blob.size)}.`);
+            }
+
+            return result;
+        }
+
+        input.addEventListener("change", async (event) => {
+            const file = event.target.files[0];
+            if (!file) {
+                status.textContent = "Aucun fichier sélectionné.";
+                return;
+            }
+
+            status.textContent = "Image chargée, choisissez un format puis cliquez sur Convertir.";
+            currentFile = file;
+            const imageUrl = URL.createObjectURL(file);
+            const img = new Image();
+            img.src = imageUrl;
+            img.onload = () => {
+                currentImage = img;
+                canvas.width = img.width;
+                canvas.height = img.height;
+                ctx.drawImage(img, 0, 0);
+                URL.revokeObjectURL(imageUrl);
+            };
+            img.onerror = () => {
+                URL.revokeObjectURL(imageUrl);
+                status.textContent = "Erreur : impossible de charger l'image.";
+                currentImage = null;
+                currentFile = null;
+            };
+        });
+
+        convertButton.addEventListener("click", async () => {
+            if (!currentImage || !currentFile) {
+                status.textContent = "Veuillez sélectionner d'abord une image.";
+                return;
+            }
+
+            const selectedType = formatSelect.value;
+            const extension = getExtension(selectedType);
+            status.textContent = "Conversion en cours...";
+            showProgress(0, "Démarrage de la conversion...");
+
+            const result = await compressCanvas(currentImage, selectedType);
+            if (!result || !result.blob) {
+                status.textContent = "Erreur : impossible de convertir l'image.";
+                hideProgress();
+                return;
+            }
+
+            const finalSize = formatBytes(result.blob.size);
+            const fileName = currentFile.name.replace(/\.[^.]+$/, "") + `-converti.${extension}`;
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(result.blob);
+            link.download = fileName;
+            link.click();
+
+            if (result.blob.size <= MAX_BYTES) {
+                showProgress(100, `Conversion réussie : ${finalSize} (${extension.toUpperCase()})`);
+            } else {
+                showProgress(100, `Conversion terminée : ${finalSize}. Impossible d'atteindre 10 Ko sans réduire davantage la résolution ou la qualité.`);
+            }
+        });
+    </script>
+</body>
+</html>
