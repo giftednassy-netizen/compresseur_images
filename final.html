@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Image Resizer & Preview | Before/After + "_compressed" naming</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: system-ui, 'Segoe UI', 'Helvetica Neue', sans-serif;
+            background: linear-gradient(145deg, #eef2f7 0%, #d4dce6 100%);
+            margin: 0;
+            min-height: 100vh;
+            padding: 28px 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            max-width: 1400px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.94);
+            backdrop-filter: blur(2px);
+            border-radius: 2rem;
+            box-shadow: 0 25px 45px -12px rgba(0, 0, 0, 0.3);
+            padding: 1.8rem 2rem 2rem;
+            transition: all 0.2s;
+        }
+
+        h1 {
+            font-size: 1.9rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #0f2b3d, #1e4a6e);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            margin: 0 0 0.3rem 0;
+        }
+
+        .subtitle {
+            color: #2c4b6c;
+            border-left: 4px solid #2c7da0;
+            padding-left: 16px;
+            margin: 0 0 1.6rem 0;
+            font-weight: 500;
+        }
+
+        /* controls panel */
+        .toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            align-items: flex-end;
+            background: #f9fbfd;
+            padding: 20px 24px;
+            border-radius: 1.8rem;
+            margin-bottom: 32px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.03);
+            border: 1px solid #e9edf2;
+        }
+
+        .ctrl-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            min-width: 150px;
+        }
+
+        .ctrl-group label {
+            font-weight: 700;
+            font-size: 0.8rem;
+            color: #1e2f3f;
+            letter-spacing: 0.3px;
+        }
+
+        input,
+        select,
+        button {
+            background: white;
+            border: 1px solid #cbdae9;
+            border-radius: 60px;
+            padding: 10px 18px;
+            font-size: 0.9rem;
+            font-family: inherit;
+            transition: 0.2s;
+        }
+
+        input:focus,
+        select:focus {
+            outline: none;
+            border-color: #2c7da0;
+            box-shadow: 0 0 0 3px rgba(44, 125, 160, 0.2);
+        }
+
+        button {
+            background: #1e4a6e;
+            color: white;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        button:hover {
+            background: #0f3550;
+            transform: scale(0.97);
+        }
+
+        .size-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .size-row input {
+            width: 105px;
+            text-align: center;
+        }
+
+        .badge {
+            background: #e2eaf1;
+            border-radius: 40px;
+            padding: 4px 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #1f5068;
+        }
+
+        /* side by side preview */
+        .preview-duo {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 28px;
+            justify-content: center;
+            margin: 20px 0 28px;
+        }
+
+        .preview-card {
+            flex: 1;
+            min-width: 260px;
+            background: #ffffffdd;
+            backdrop-filter: blur(2px);
+            border-radius: 1.5rem;
+            padding: 1rem 1rem 1.2rem;
+            box-shadow: 0 12px 24px -10px rgba(0, 0, 0, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.7);
+        }
+
+        .preview-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            flex-wrap: wrap;
+            margin-bottom: 14px;
+            padding: 0 6px;
+        }
+
+        .preview-header h3 {
+            margin: 0;
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+        .file-size-badge {
+            font-size: 0.75rem;
+            background: #eef2fa;
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-family: monospace;
+            font-weight: 500;
+        }
+
+        .image-preview-box {
+            background: #f2f6fc;
+            border-radius: 1.2rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 280px;
+            overflow: hidden;
+            border: 2px dashed #bdd3e8;
+        }
+
+        .image-preview-box img {
+            max-width: 100%;
+            max-height: 380px;
+            object-fit: contain;
+            display: block;
+            border-radius: 14px;
+        }
+
+        .dim-meta {
+            margin-top: 12px;
+            text-align: center;
+            font-size: 0.7rem;
+            font-weight: 500;
+            background: #f0f4f9;
+            padding: 5px 10px;
+            border-radius: 28px;
+            display: inline-block;
+            width: auto;
+        }
+
+        .action-footer {
+            background: #eef3fc;
+            border-radius: 2rem;
+            padding: 14px 24px;
+            margin-top: 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        #statusMessage {
+            font-weight: 500;
+            color: #0a2c3b;
+        }
+
+        .download-btn {
+            background: #15803d;
+            box-shadow: none;
+            font-weight: 700;
+        }
+
+        .download-btn:hover {
+            background: #0f5e2e;
+        }
+
+        hr {
+            margin: 20px 0 0;
+            border-color: #dce5ef;
+        }
+
+        @media (max-width: 760px) {
+            .container {
+                padding: 1.2rem;
+            }
+
+            .toolbar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🖼️ Resizer & Preview Studio</h1>
+        <div class="subtitle">Redimensionnement • Comparaison avant/après • Nom du fichier :
+            <strong>nom_original_compressed.ext</strong></div>
+
+        <!-- controls -->
+        <div class="toolbar">
+            <div class="ctrl-group">
+                <label>📂 Choisir une image</label>
+                <input type="file" id="imageUpload" accept="image/jpeg,image/png,image/webp,image/bmp,image/avif">
+            </div>
+
+            <div class="ctrl-group">
+                <label>📐 Dimensions finales (px)</label>
+                <div class="size-row">
+                    <input type="number" id="finalWidth" placeholder="Largeur" value="800" step="1" min="20">
+                    <span>×</span>
+                    <input type="number" id="finalHeight" placeholder="Hauteur" value="600" step="1" min="20">
+                    <button type="button" id="toggleRatioBtn" style="background:#386a8c;">🔗 Conserver ratio</button>
+                </div>
+            </div>
+
+            <div class="ctrl-group">
+                <label>🎞️ Format de sortie</label>
+                <select id="outputType">
+                    <option value="image/jpeg">JPEG (recommandé)</option>
+                    <option value="image/png">PNG</option>
+                    <option value="image/webp">WebP</option>
+                    <option value="image/avif">AVIF</option>
+                </select>
+            </div>
+
+            <div class="ctrl-group">
+                <label>✨ Qualité (JPEG/WebP/AVIF)</label>
+                <input type="range" id="qualityControl" min="0.4" max="1.0" step="0.01" value="0.85">
+                <span id="qualityPercent" class="badge">85%</span>
+            </div>
+            <button id="refreshPreviewBtn">🔄 Générer l'aperçu</button>
+        </div>
+
+        <!-- BEFORE / AFTER preview side by side -->
+        <div class="preview-duo">
+            <!-- Original -->
+            <div class="preview-card">
+                <div class="preview-header">
+                    <h3>📸 Original</h3>
+                    <span class="file-size-badge" id="originalFileSize">—</span>
+                </div>
+                <div class="image-preview-box" id="originalPreviewZone">
+                    <div style="color:#8ba0b0; padding: 2rem;">Aucune image</div>
+                </div>
+                <div class="dim-meta" id="originalDimensions">Dimensions : —</div>
+            </div>
+
+            <!-- After (compressed/resized) -->
+            <div class="preview-card">
+                <div class="preview-header">
+                    <h3>✨ Après redimensionnement</h3>
+                    <span class="file-size-badge" id="resizedFileSize">—</span>
+                </div>
+                <div class="image-preview-box" id="resizedPreviewZone">
+                    <div style="color:#8ba0b0; padding: 2rem;">Cliquez sur "Générer l'aperçu"</div>
+                </div>
+                <div class="dim-meta" id="resizedDimensions">Dimensions : —</div>
+            </div>
+        </div>
+
+        <div class="action-footer">
+            <div id="statusMessage">✅ Prêt. Chargez une image, ajustez la taille, puis générez l'aperçu.</div>
+            <button id="downloadResizedBtn" class="download-btn" disabled>💾 Télécharger (_compressed)</button>
+        </div>
+        <hr />
+        <div style="font-size: 0.7rem; text-align: center; margin-top: 14px; color: #476b85;">
+            ⚡ Le fichier téléchargé garde le nom original + "_compressed" (ex: paysage_compressed.jpg) • Aperçu en
+            direct avec dimensions modifiables
+        </div>
+    </div>
+
+    <script>
+        // DOM elements
+        const uploadInput = document.getElementById('imageUpload');
+        const widthInput = document.getElementById('finalWidth');
+        const heightInput = document.getElementById('finalHeight');
+        const toggleRatioBtn = document.getElementById('toggleRatioBtn');
+        const formatSelect = document.getElementById('outputType');
+        const qualitySlider = document.getElementById('qualityControl');
+        const qualitySpan = document.getElementById('qualityPercent');
+        const refreshBtn = document.getElementById('refreshPreviewBtn');
+        const downloadBtn = document.getElementById('downloadResizedBtn');
+        const statusDiv = document.getElementById('statusMessage');
+
+        // preview containers & infos
+        const originalPreviewZone = document.getElementById('originalPreviewZone');
+        const resizedPreviewZone = document.getElementById('resizedPreviewZone');
+        const originalFileSizeSpan = document.getElementById('originalFileSize');
+        const resizedFileSizeSpan = document.getElementById('resizedFileSize');
+        const originalDimensionsSpan = document.getElementById('originalDimensions');
+        const resizedDimensionsSpan = document.getElementById('resizedDimensions');
+
+        // state
+        let originalImageFile = null;          // raw uploaded file
+        let originalImgElement = null;          // HTMLImageElement (original)
+        let originalBlobURL = null;
+        let originalWidth = 0, originalHeight = 0;
+        let currentResizedBlob = null;          // latest generated blob
+        let currentResizedObjectUrl = null;     // for preview cleanup
+        let keepAspectRatio = true;              // default locked ratio
+
+        // original filename (without extension)
+        let originalBaseName = "";
+        let originalExtension = "jpg";
+
+        // helper: format bytes
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+        }
+
+        // extract base name and extension from file
+        function parseOriginalFileName(file) {
+            if (!file) return { base: "image", ext: "jpg" };
+            const fullName = file.name;
+            const lastDot = fullName.lastIndexOf('.');
+            if (lastDot === -1) return { base: fullName, ext: "" };
+            const base = fullName.substring(0, lastDot);
+            const ext = fullName.substring(lastDot + 1).toLowerCase();
+            return { base, ext };
+        }
+
+        // update original preview area and dimensions + file size
+        function updateOriginalPreviewUI() {
+            if (originalImgElement && originalImgElement.complete && originalImgElement.naturalWidth > 0) {
+                originalPreviewZone.innerHTML = '';
+                const imgClone = document.createElement('img');
+                imgClone.src = originalImgElement.src;
+                imgClone.style.maxWidth = '100%';
+                imgClone.style.maxHeight = '380px';
+                imgClone.style.borderRadius = '14px';
+                originalPreviewZone.appendChild(imgClone);
+                originalDimensionsSpan.innerText = `Dimensions : ${originalImgElement.naturalWidth} × ${originalImgElement.naturalHeight}`;
+                if (originalImageFile) {
+                    originalFileSizeSpan.innerText = formatBytes(originalImageFile.size);
+                } else {
+                    originalFileSizeSpan.innerText = '—';
+                }
+            } else {
+                originalPreviewZone.innerHTML = '<div style="color:#8ba0b0; padding: 2rem;">Aucune image valide</div>';
+                originalDimensionsSpan.innerText = 'Dimensions : —';
+                originalFileSizeSpan.innerText = '—';
+            }
+        }
+
+        // generate resized image from current settings (dimensions, format, quality)
+        async function generateResizedBlob() {
+            if (!originalImgElement || !originalImgElement.complete || originalImgElement.naturalWidth === 0) {
+                statusDiv.innerText = '❌ Image originale manquante. Veuillez en charger une.';
+                return null;
+            }
+
+            let targetW = parseInt(widthInput.value, 10);
+            let targetH = parseInt(heightInput.value, 10);
+            if (isNaN(targetW) || targetW < 4) targetW = 100;
+            if (isNaN(targetH) || targetH < 4) targetH = 100;
+
+            // handle aspect ratio lock
+            if (keepAspectRatio && originalImgElement.naturalWidth && originalImgElement.naturalHeight) {
+                const ratio = originalImgElement.naturalWidth / originalImgElement.naturalHeight;
+                targetH = Math.round(targetW / ratio);
+                heightInput.value = targetH;
+            }
+
+            targetW = Math.max(4, targetW);
+            targetH = Math.max(4, targetH);
+
+            // create canvas and draw high quality resized image
+            const canvas = document.createElement('canvas');
+            canvas.width = targetW;
+            canvas.height = targetH;
+            const ctx = canvas.getContext('2d');
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            ctx.drawImage(originalImgElement, 0, 0, targetW, targetH);
+
+            const mimeType = formatSelect.value;
+            let qualityVal = parseFloat(qualitySlider.value);
+            if (isNaN(qualityVal)) qualityVal = 0.85;
+            qualityVal = Math.min(1.0, Math.max(0.1, qualityVal));
+
+            // for PNG quality param is ignored (but fine)
+            const useQuality = (mimeType === 'image/png') ? undefined : qualityVal;
+
+            return new Promise((resolve) => {
+                canvas.toBlob((blob) => {
+                    if (!blob) {
+                        resolve(null);
+                        return;
+                    }
+                    resolve({ blob, width: targetW, height: targetH });
+                }, mimeType, useQuality);
+            });
+        }
+
+        // refresh the AFTER preview and store blob for download
+        async function refreshAfterPreview() {
+            if (!originalImgElement || !originalImgElement.complete) {
+                statusDiv.innerText = '⚠️ Chargez d\'abord une image.';
+                return false;
+            }
+
+            statusDiv.innerText = '⏳ Redimensionnement et compression en cours...';
+            const result = await generateResizedBlob();
+            if (!result || !result.blob) {
+                statusDiv.innerText = '❌ Erreur lors du redimensionnement. Essayez d\'autres dimensions.';
+                downloadBtn.disabled = true;
+                return false;
+            }
+
+            // cleanup previous object URL
+            if (currentResizedObjectUrl) {
+                URL.revokeObjectURL(currentResizedObjectUrl);
+                currentResizedObjectUrl = null;
+            }
+
+            currentResizedBlob = result.blob;
+            const previewUrl = URL.createObjectURL(result.blob);
+            currentResizedObjectUrl = previewUrl;
+
+            // display resized preview
+            const resizedImg = new Image();
+            resizedImg.onload = () => {
+                resizedPreviewZone.innerHTML = '';
+                const displayImg = document.createElement('img');
+                displayImg.src = previewUrl;
+                displayImg.style.maxWidth = '100%';
+                displayImg.style.maxHeight = '380px';
+                displayImg.style.borderRadius = '14px';
+                resizedPreviewZone.appendChild(displayImg);
+                resizedFileSizeSpan.innerText = formatBytes(result.blob.size);
+                resizedDimensionsSpan.innerText = `Dimensions : ${result.width} × ${result.height}`;
+                statusDiv.innerText = `✅ Aperçu mis à jour — Taille finale : ${formatBytes(result.blob.size)} (${result.width}×${result.height})`;
+                downloadBtn.disabled = false;
+            };
+            resizedImg.onerror = () => {
+                resizedPreviewZone.innerHTML = '<div style="color:#8ba0b0; padding: 2rem;">Erreur affichage aperçu</div>';
+                statusDiv.innerText = '⚠️ Aperçu indisponible mais vous pouvez télécharger.';
+                downloadBtn.disabled = false;
+            };
+            resizedImg.src = previewUrl;
+            return true;
+        }
+
+        // load new image from file, reset states and update both sides
+        function loadImage(file) {
+            if (!file || !file.type.startsWith('image/')) {
+                statusDiv.innerText = '❌ Fichier non valide (image requise).';
+                return;
+            }
+
+            if (originalBlobURL) {
+                URL.revokeObjectURL(originalBlobURL);
+                originalBlobURL = null;
+            }
+
+            const url = URL.createObjectURL(file);
+            originalBlobURL = url;
+            const img = new Image();
+            img.onload = () => {
+                originalImgElement = img;
+                originalImageFile = file;
+                originalWidth = img.naturalWidth;
+                originalHeight = img.naturalHeight;
+
+                // extract original name info
+                const nameInfo = parseOriginalFileName(file);
+                originalBaseName = nameInfo.base;
+                originalExtension = nameInfo.ext || (file.type === 'image/jpeg' ? 'jpg' : 'png');
+
+                // set initial target dimensions respecting ratio lock (max recommended width 800)
+                if (keepAspectRatio) {
+                    let suggestedWidth = Math.min(originalWidth, 800);
+                    let suggestedHeight = Math.round(suggestedWidth / (originalWidth / originalHeight));
+                    widthInput.value = suggestedWidth;
+                    heightInput.value = suggestedHeight;
+                } else {
+                    widthInput.value = Math.min(originalWidth, 800);
+                    heightInput.value = Math.min(originalHeight, 600);
+                }
+
+                updateOriginalPreviewUI();
+                // auto-generate first preview
+                refreshAfterPreview().catch(e => {
+                    statusDiv.innerText = 'Erreur preview: ' + e.message;
+                });
+            };
+            img.onerror = () => {
+                statusDiv.innerText = '❌ Impossible de décoder l\'image.';
+                originalImgElement = null;
+                originalImageFile = null;
+                updateOriginalPreviewUI();
+                resizedPreviewZone.innerHTML = '<div style="color:#8ba0b0; padding: 2rem;">Redimensionnement impossible</div>';
+                downloadBtn.disabled = true;
+            };
+            img.src = url;
+        }
+
+        // handle file upload
+        uploadInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                loadImage(file);
+            } else {
+                originalImgElement = null;
+                originalImageFile = null;
+                updateOriginalPreviewUI();
+                resizedPreviewZone.innerHTML = '<div style="color:#8ba0b0; padding: 2rem;">Aucune image sélectionnée</div>';
+                downloadBtn.disabled = true;
+                statusDiv.innerText = '📁 Choisissez une image pour commencer.';
+            }
+        });
+
+        // quality slider display & live update can be triggered by refresh button
+        qualitySlider.addEventListener('input', (e) => {
+            const val = Math.round(parseFloat(e.target.value) * 100);
+            qualitySpan.innerText = `${val}%`;
+            if (originalImgElement) {
+                // optional: auto refresh when slider changes? we do it via refresh button, but we can call if desired
+                // but better UX: user clicks generate to avoid lag, but I'll let refresh button do it. 
+            }
+        });
+
+        // manual refresh button
+        refreshBtn.addEventListener('click', () => {
+            if (!originalImgElement) {
+                statusDiv.innerText = 'Veuillez d\'abord charger une image.';
+                return;
+            }
+            // apply dimension ratio check before refresh
+            if (keepAspectRatio && originalImgElement.naturalWidth) {
+                const currentW = parseInt(widthInput.value, 10);
+                if (!isNaN(currentW) && currentW > 0) {
+                    const ratio = originalImgElement.naturalWidth / originalImgElement.naturalHeight;
+                    const newH = Math.round(currentW / ratio);
+                    heightInput.value = newH;
+                }
+            }
+            refreshAfterPreview();
+        });
+
+        // Toggle aspect ratio lock
+        toggleRatioBtn.addEventListener('click', () => {
+            keepAspectRatio = !keepAspectRatio;
+            toggleRatioBtn.innerText = keepAspectRatio ? '🔗 Conserver ratio' : '🔓 Ratio libre';
+            toggleRatioBtn.style.background = keepAspectRatio ? '#386a8c' : '#8faaaf';
+            if (keepAspectRatio && originalImgElement && originalImgElement.naturalWidth) {
+                const currentWidth = parseInt(widthInput.value, 10);
+                if (!isNaN(currentWidth) && currentWidth > 0) {
+                    const ratio = originalImgElement.naturalWidth / originalImgElement.naturalHeight;
+                    const correctHeight = Math.round(currentWidth / ratio);
+                    heightInput.value = correctHeight;
+                    refreshAfterPreview();  // update preview after ratio adjustment
+                } else {
+                    refreshAfterPreview();
+                }
+            } else if (!keepAspectRatio && originalImgElement) {
+                refreshAfterPreview();
+            }
+        });
+
+        // sync dimensions when width changes manually and ratio locked
+        widthInput.addEventListener('input', () => {
+            if (keepAspectRatio && originalImgElement && originalImgElement.naturalWidth) {
+                const newWidth = parseInt(widthInput.value, 10);
+                if (!isNaN(newWidth) && newWidth > 0) {
+                    const ratio = originalImgElement.naturalWidth / originalImgElement.naturalHeight;
+                    const newHeight = Math.round(newWidth / ratio);
+                    heightInput.value = newHeight;
+                }
+            }
+            // we do NOT auto refresh on each keystroke for performance; user clicks "Générer l'aperçu"
+        });
+
+        heightInput.addEventListener('input', () => {
+            if (keepAspectRatio && originalImgElement && originalImgElement.naturalWidth) {
+                const newHeight = parseInt(heightInput.value, 10);
+                if (!isNaN(newHeight) && newHeight > 0) {
+                    const ratio = originalImgElement.naturalWidth / originalImgElement.naturalHeight;
+                    const newWidth = Math.round(newHeight * ratio);
+                    widthInput.value = newWidth;
+                }
+            }
+        });
+
+        // DOWNLOAD with name: originalname_compressed.extension
+        downloadBtn.addEventListener('click', () => {
+            if (!currentResizedBlob) {
+                statusDiv.innerText = 'Aucune image redimensionnée disponible. Générez un aperçu d\'abord.';
+                return;
+            }
+
+            // determine final extension from chosen format
+            let chosenFormat = formatSelect.value;
+            let finalExt = 'jpg';
+            if (chosenFormat === 'image/png') finalExt = 'png';
+            else if (chosenFormat === 'image/webp') finalExt = 'webp';
+            else if (chosenFormat === 'image/avif') finalExt = 'avif';
+            else finalExt = 'jpg';
+
+            // build filename: originalBaseName + "_compressed." + extension
+            let baseForFile = originalBaseName && originalBaseName.length > 0 ? originalBaseName : "image";
+            // remove any problematic characters but keep basic
+            baseForFile = baseForFile.replace(/[\\/:*?"<>|]/g, '');
+            const finalFileName = `${baseForFile}_compressed.${finalExt}`;
+
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(currentResizedBlob);
+            link.href = url;
+            link.download = finalFileName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+
+            statusDiv.innerText = `✅ Téléchargé : ${finalFileName} (${formatBytes(currentResizedBlob.size)})`;
+        });
+
+        // initial ratio button style & tooltips
+        toggleRatioBtn.style.background = '#386a8c';
+        qualitySpan.innerText = '85%';
+        statusDiv.innerText = '📸 Chargez une image → ajustez la taille finale → "Générer l\'aperçu" → téléchargez avec "_compressed"';
+    </script>
+</body>
+
+</html>
